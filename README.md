@@ -2,6 +2,9 @@
 
 Un juego de Mancala implementado en Python con interfaz de consola y colores, siguiendo las reglas de la variante Congkak.
 
+<img width="350" height="300" alt="image" src="https://github.com/user-attachments/assets/a884e968-f227-48f5-adae-80917f798aa1" />
+
+
 ## Descripcion del Juego
 
 Congkak es una variante de Mancala donde dos jugadores compiten por recolectar la mayor cantidad de piedras en sus almacenes (llamados "rumah" o casa). Cada jugador tiene 7 huecos con piedras y debe distribuir las piedras de un hueco seleccionado en sentido anti-horario, saltando el almacen del oponente.
