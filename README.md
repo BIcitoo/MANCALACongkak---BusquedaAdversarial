@@ -47,7 +47,7 @@ Indice 15:     Almacen (Casa) del Jugador 2
 
 ## Archivos del Proyecto
 
-### board.py - El Arquitecto del Tablero
+### board.py
 Contiene la clase `MancalaBoard` que maneja la representacion visual del tablero.
 
 **Funciones principales:**
@@ -60,7 +60,7 @@ Contiene la clase `MancalaBoard` que maneja la representacion visual del tablero
 - Indices numericos para facilitar la seleccion de huecos
 - Constantes P1_STORE = 7 y P2_STORE = 15 para referencia rapida
 
-### logic.py - El Ingeniero de Logica
+### logic.py
 Implementa la logica principal del movimiento de piedras siguiendo las reglas de Congkak.
 
 **Funciones principales:**
@@ -74,7 +74,7 @@ Implementa la logica principal del movimiento de piedras siguiendo las reglas de
 5. Determina si el jugador obtiene un turno extra (si la ultima piedra cae en su almacen)
 6. Retorna el tablero actualizado y el estado del movimiento ("TURNO_EXTRA" o "FIN_TURNO")
 
-### rules.py - El Guardian de las Reglas
+### rules.py
 Maneja las reglas del juego y condiciones de finalizacion.
 
 **Funciones principales:**
@@ -87,7 +87,7 @@ Maneja las reglas del juego y condiciones de finalizacion.
   - Si side_empty == 2: recoge piedras del J1 (indices 0-6) y las suma al almacen del J1 (indice 7)
 - `declare_winner(score_p1, score_p2)`: Determina y anuncia el ganador
 
-### main.py - El Director del Juego
+### main.py
 Archivo principal que integra todos los modulos y ejecuta el juego.
 
 **Funciones principales:**
