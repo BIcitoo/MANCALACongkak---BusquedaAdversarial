@@ -47,7 +47,7 @@ Indice 15:     Almacen (Casa) del Jugador 2
 
 ## Archivos del Proyecto
 
-### board.py
+### board.py - El Arquitecto del Tablero
 Contiene la clase `MancalaBoard` que maneja la representacion visual del tablero.
 
 **Funciones principales:**
@@ -60,7 +60,7 @@ Contiene la clase `MancalaBoard` que maneja la representacion visual del tablero
 - Indices numericos para facilitar la seleccion de huecos
 - Constantes P1_STORE = 7 y P2_STORE = 15 para referencia rapida
 
-### logic.py
+### logic.py - El Ingeniero de Logica
 Implementa la logica principal del movimiento de piedras siguiendo las reglas de Congkak.
 
 **Funciones principales:**
@@ -74,7 +74,7 @@ Implementa la logica principal del movimiento de piedras siguiendo las reglas de
 5. Determina si el jugador obtiene un turno extra (si la ultima piedra cae en su almacen)
 6. Retorna el tablero actualizado y el estado del movimiento ("TURNO_EXTRA" o "FIN_TURNO")
 
-### rules.py
+### rules.py - El Guardian de las Reglas
 Maneja las reglas del juego y condiciones de finalizacion.
 
 **Funciones principales:**
@@ -87,8 +87,8 @@ Maneja las reglas del juego y condiciones de finalizacion.
   - Si side_empty == 2: recoge piedras del J1 (indices 0-6) y las suma al almacen del J1 (indice 7)
 - `declare_winner(score_p1, score_p2)`: Determina y anuncia el ganador
 
-### main.py
-Archivo principal que integra todos los modulos y ejecuta el juego.
+### main.py - El Director del Juego
+Archivo principal que integra todos los modulos y ejecuta el juego con soporte para IA.
 
 **Funciones principales:**
 - `get_player_input(current_player, board_state)`: Solicita y valida la entrada del jugador
@@ -96,27 +96,46 @@ Archivo principal que integra todos los modulos y ejecuta el juego.
   - Verifica el rango correcto (0-6 para J1, 8-14 para J2)
   - Comprueba que el hueco elegido no este vacio
   - Maneja errores con mensajes claros
+- `get_game_mode()`: Permite seleccionar el modo de juego
+  - Humano vs Humano
+  - Humano vs IA
+  - IA vs IA
+- `get_ai_difficulty()`: Configura la dificultad de la IA
+  - Facil (2 segundos por movimiento)
+  - Medio (5 segundos por movimiento)
+  - Dificil (10 segundos por movimiento)
 - `play_game()`: Bucle principal del juego
   - Crea el tablero y establece el jugador inicial
   - Muestra el tablero y verifica condiciones de fin de juego
   - Maneja turnos extra correctamente
   - Ejecuta el barrido final y declara el ganador
+  - Integra IA con Minimax y poda Alpha-Beta
 
 **Caracteristicas de la interfaz:**
 - Validacion completa de entrada del usuario
 - Manejo de errores con mensajes claros
 - Limpieza de pantalla entre turnos
 - Informacion detallada del estado del juego
+- Soporte para multiples modos de juego
+- Sistema de fallback para movimientos de emergencia
 
 ## Como Jugar
 
 1. Ejecuta el juego: `python main.py`
-2. El tablero se muestra con colores y numeros de posicion
-3. En tu turno, elige un hueco de tu lado (0-6 para jugador 1, 8-14 para jugador 2)
-4. Las piedras se distribuyen automaticamente en sentido anti-horario
-5. Si tu ultima piedra cae en tu almacen, obtienes un turno extra
-6. El juego termina cuando un jugador se queda sin piedras en sus huecos
-7. Se realiza un barrido final y se declara el ganador
+2. Selecciona el modo de juego:
+   - **Humano vs Humano**: Juego tradicional entre dos personas
+   - **Humano vs IA**: Juegas contra una IA inteligente
+   - **IA vs IA**: Observa una partida entre dos IAs
+3. Si eliges un modo con IA, selecciona la dificultad:
+   - **Facil**: IA piensa 2 segundos por movimiento
+   - **Medio**: IA piensa 5 segundos por movimiento
+   - **Dificil**: IA piensa 10 segundos por movimiento
+4. El tablero se muestra con colores y numeros de posicion
+5. En tu turno, elige un hueco de tu lado (0-6 para jugador 1, 8-14 para jugador 2)
+6. Las piedras se distribuyen automaticamente en sentido anti-horario
+7. Si tu ultima piedra cae en tu almacen, obtienes un turno extra
+8. El juego termina cuando un jugador se queda sin piedras en sus huecos
+9. Se realiza un barrido final y se declara el ganador
 
 ## Estrategias y Heuristicas
 
@@ -151,6 +170,11 @@ Para desarrollar una IA o mejorar el juego, estas son las 5 heuristicas mas efec
 
 - Python 3.6 o superior
 - colorama (para colores en consola)
+- copy (modulo estandar de Python)
+- math (modulo estandar de Python)
+- time (modulo estandar de Python)
+- sys (modulo estandar de Python)
+- os (modulo estandar de Python)
 
 ## Instalacion
 
@@ -184,3 +208,91 @@ Este proyecto fue desarrollado siguiendo una arquitectura modular donde cada arc
 - **main.py**: Director del juego - integra todos los modulos
 
 Esta separacion permite trabajo en paralelo y facilita el mantenimiento del codigo.
+
+## Implementacion de Inteligencia Artificial
+
+El proyecto incluye una implementacion completa de IA usando el algoritmo Minimax con poda Alpha-Beta.
+
+### Modulos de IA (Directorio Minimax/)
+
+#### evaluation.py - El Evaluador de Posiciones
+Implementa las 5 heuristicas principales para evaluar posiciones del tablero.
+
+**Funciones principales:**
+- `evaluate(board_state, player_id, weights_config)`: Funcion principal de evaluacion
+- `_h1_score_differential()`: Diferencia entre almacenes propio y del oponente
+- `_h2_extra_turns()`: Cuenta jugadas que otorgan turno extra
+- `_h3_mobility_control()`: Evalua piedras en huecos propios
+- `_h4_opponent_starvation()`: Evalua piedras del oponente (penalizacion)
+- `_h5_control_key_hole()`: Control del hueco estrategico (indice 6 o 14)
+
+**Pesos configurables:**
+- w1: 10.0 (Diferencial de puntuacion)
+- w2: 50.0 (Turnos extra)
+- w3: 0.8 (Movilidad)
+- w4: -0.5 (Hambre del oponente)
+- w5: 1.5 (Control del hueco clave)
+
+#### ai_core.py - El Motor de Busqueda
+Implementa el algoritmo Minimax con poda Alpha-Beta.
+
+**Caracteristicas:**
+- Busqueda en profundidad con limite maximo de 20 niveles
+- Poda Alpha-Beta para optimizar el rendimiento
+- Manejo de turnos extra correctamente
+- Control de tiempo para evitar busquedas infinitas
+- Validacion de movimientos posibles
+
+#### agent_ai.py - El Agente Inteligente
+Envoltorio que implementa Iterative Deepening Search (IDS).
+
+**Caracteristicas:**
+- IDS con limite maximo de 15 iteraciones
+- Manejo robusto de errores y timeouts
+- Configuracion flexible de pesos heuristicos
+- Sistema de fallback para movimientos de emergencia
+
+### Caracteristicas Tecnicas de la IA
+
+**Algoritmo:** Minimax con poda Alpha-Beta
+**Busqueda:** Iterative Deepening Search (IDS)
+**Evaluacion:** Funcion heuristica ponderada con 5 metricas
+**Límites:** Profundidad maxima 20, tiempo configurable
+**Optimizaciones:** Poda Alpha-Beta, validacion de movimientos
+
+**Rendimiento:**
+- Facil: 2 segundos por movimiento (profundidad ~8-12)
+- Medio: 5 segundos por movimiento (profundidad ~12-15)
+- Dificil: 10 segundos por movimiento (profundidad ~15-20)
+
+### Modos de Juego con IA
+
+1. **Humano vs IA**: Juega contra una IA configurable
+2. **IA vs IA**: Observa partidas entre dos IAs identicas
+3. **Analisis**: Usa IA vs IA para estudiar estrategias
+
+La IA utiliza todas las heuristicas implementadas y es un oponente desafiante que puede adaptarse a diferentes niveles de dificultad.
+
+## Caracteristicas Avanzadas
+
+### Sistema de Fallback
+El juego incluye un sistema robusto de manejo de errores:
+- Si la IA no puede encontrar un movimiento, busca automaticamente cualquier movimiento valido
+- Previene que el juego se rompa por errores de la IA
+- Mensajes informativos sobre el estado del juego
+
+### Optimizaciones de Rendimiento
+- **Poda Alpha-Beta**: Reduce drasticamente el numero de nodos evaluados
+- **Límites de Profundidad**: Evita busquedas infinitas y recursiones excesivas
+- **Control de Tiempo**: Respeta los limites de tiempo configurados
+- **Validacion de Movimientos**: Verifica que todos los movimientos sean validos
+
+### Configuracion Flexible
+- Pesos heuristicos ajustables para diferentes estilos de juego
+- Dificultades configurables con diferentes tiempos de busqueda
+- Modos de juego multiples para diferentes casos de uso
+
+### Arquitectura Modular
+- Separacion clara entre logica de juego y IA
+- Modulos independientes que pueden ser modificados sin afectar otros
+- Interfaz limpia entre componentes del sistema
