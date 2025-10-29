@@ -111,15 +111,16 @@ def save_benchmark(stats: dict):
     if not os.path.exists(cache_dir):
         os.makedirs(cache_dir)
     
-    # Si el archivo no existe, crear con headers
+    # Si el archivo no existe, crear con headers en espanol
     if not os.path.exists(csv_file):
         headers = [
-            'timestamp', 'modo_juego', 'jugador1_tipo', 'jugador2_tipo',
-            'time_limit', 'duracion_total', 'ganador',
-            'score_p1', 'score_p2',
-            'p1_nodos_expandidos', 'p1_profundidad_total', 'p1_movimientos',
-            'p2_nodos_expandidos', 'p2_profundidad_total', 'p2_movimientos',
-            'p1_profundidad_promedio', 'p2_profundidad_promedio'
+            'timestamp', 'modo_juego', 'jugador1_tipo', 'jugador2_tipo', 'dificultad',
+            'ganador_del_juego',
+            'cantidad_de_puntos_obtenidos_ganador', 'cantidad_de_puntos_obtenidos_perdedor',
+            'cantidad_de_nodos_expandidos_j1', 'cantidad_de_nodos_expandidos_j2',
+            'promedio_de_profundidad_j1', 'promedio_de_profundidad_j2',
+            'profundidad_total_del_arbol_de_busqueda_j1', 'profundidad_total_del_arbol_de_busqueda_j2',
+            'tiempo_de_ejecucion'
         ]
         
         with open(csv_file, 'w', newline='', encoding='utf-8') as f:
@@ -138,28 +139,60 @@ def save_benchmark(stats: dict):
     }
     
     j1_tipo, j2_tipo = tipos_jugadores.get(stats['mode'], ('Desconocido', 'Desconocido'))
-    p1_avg = stats['p1_depth_total'] / stats['p1_moves'] if stats['p1_moves'] > 0 else 0
-    p2_avg = stats['p2_depth_total'] / stats['p2_moves'] if stats['p2_moves'] > 0 else 0
     
-    # Escribir datos en CSV
+    # Calcular metricas por jugador
+    profundidad_promedio_j1 = stats['p1_depth_total'] / stats['p1_moves'] if stats['p1_moves'] > 0 else 0
+    profundidad_promedio_j2 = stats['p2_depth_total'] / stats['p2_moves'] if stats['p2_moves'] > 0 else 0
+    profundidad_total_j1 = stats['p1_depth_total']
+    profundidad_total_j2 = stats['p2_depth_total']
+    nodos_expandidos_j1 = stats.get('p1_nodes', 0)
+    nodos_expandidos_j2 = stats.get('p2_nodes', 0)
+    tiempo_ejecucion = stats.get('total_duration', 0)
+    
+    # Determinar ganador y puntos
+    winner_string = stats.get('winner_string', 'Empate')
+    score_p1 = stats.get('score_p1', 0)
+    score_p2 = stats.get('score_p2', 0)
+    
+    # Determinar quien gano
+    if 'Jugador 1' in winner_string:
+        puntos_ganador = score_p1
+        puntos_perdedor = score_p2
+        ganador = "Jugador 1"
+    elif 'Jugador 2' in winner_string:
+        puntos_ganador = score_p2
+        puntos_perdedor = score_p1
+        ganador = "Jugador 2"
+    else:
+        puntos_ganador = max(score_p1, score_p2)
+        puntos_perdedor = min(score_p1, score_p2)
+        ganador = "Empate"
+    
+    # Mapear time_limit a dificultad
+    time_map = {
+        2.0: 'Facil',
+        5.0: 'Intermedio',
+        10.0: 'Dificil'
+    }
+    dificultad = time_map.get(stats.get('time_limit', 5.0), 'Intermedio')
+    
+    # Escribir datos en CSV con nombres en espanol
     row = [
         timestamp,
         stats.get('mode', 0),
         j1_tipo,
         j2_tipo,
-        stats.get('time_limit', 0),
-        stats.get('total_duration', 0),
-        stats.get('winner_string', 'Empate'),
-        stats.get('score_p1', 0),
-        stats.get('score_p2', 0),
-        stats.get('p1_nodes', 0),
-        stats.get('p1_depth_total', 0),
-        stats.get('p1_moves', 0),
-        stats.get('p2_nodes', 0),
-        stats.get('p2_depth_total', 0),
-        stats.get('p2_moves', 0),
-        p1_avg,
-        p2_avg
+        dificultad,
+        ganador,
+        puntos_ganador,  # cantidad_de_puntos_obtenidos_ganador
+        puntos_perdedor,  # cantidad_de_puntos_obtenidos_perdedor
+        nodos_expandidos_j1,  # cantidad_de_nodos_expandidos_j1
+        nodos_expandidos_j2,  # cantidad_de_nodos_expandidos_j2
+        profundidad_promedio_j1,  # promedio_de_profundidad_j1
+        profundidad_promedio_j2,  # promedio_de_profundidad_j2
+        profundidad_total_j1,  # profundidad_total_del_arbol_de_busqueda_j1
+        profundidad_total_j2,  # profundidad_total_del_arbol_de_busqueda_j2
+        tiempo_ejecucion  # tiempo_de_ejecucion
     ]
     
     # Append al archivo
