@@ -42,12 +42,14 @@ class AgentMinimax:
         start_time = time.time()
         final_move = None
 
+        search_stats = {'nodes_expanded': 0, 'depth_reached': 0}
+
         # IDS: profundidades crecientes (límite máximo de 15)
         for depth in range(1, 16):
             try:
                 print(f"Buscando a profundidad: {depth}")
 
-                result = minimax_search(
+                score, move, nodes = minimax_search(
                     board_state,
                     current_player,
                     depth,
@@ -62,11 +64,6 @@ class AgentMinimax:
                     self.weights,
                 )
 
-                # Normalizamos la respuesta esperada
-                if isinstance(result, tuple) and len(result) == 2:
-                    score, move = result
-                else:
-                    score, move = result, None
 
                 if score == "TIMEOUT":
                     print(f"Tiempo agotado. Usando mejor movimiento de profundidad {depth-1}")
@@ -75,6 +72,8 @@ class AgentMinimax:
                 # Guardar la mejor jugada encontrada en esta profundidad
                 if move is not None:
                     final_move = move
+                    search_stats['nodes_expanded'] = nodes
+                    search_stats['depth_reached'] = depth
 
                 # Comprobación de seguridad: si ya se excedió el tiempo, salir.
                 elapsed = time.time() - start_time
@@ -90,7 +89,7 @@ class AgentMinimax:
                 print(f"Excepción durante minimax_search a profundidad {depth}: {e}")
                 break
 
-        return final_move
+        return final_move, search_stats
 
 if __name__ == "__main__":
     # Ejemplo de uso rápido (no funcional sin el resto del motor)
