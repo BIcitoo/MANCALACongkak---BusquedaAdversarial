@@ -3,11 +3,17 @@ import rules
 from board import MancalaBoard
 import sys
 import os
+import time
+import datetime
+import csv
 
-# Agregar el directorio Minimax al path para importar los módulos
-sys.path.append(os.path.join(os.path.dirname(__file__), 'Minimax'))
+# Agregar el directorio MINIMAX al path para importar los módulos
+sys.path.append(os.path.join(os.path.dirname(__file__), 'MINIMAX'))
 
 from MINIMAX.agent_ai import AgentMinimax
+from MINIMAX.agent_greedy import AgentGreedy
+from MINIMAX.agent_random import AgentRandom
+from MINIMAX.agent_worst import AgentWorst
 
 def get_player_input(current_player: int, board_state: list) -> int:
     while True:
@@ -42,15 +48,18 @@ def get_game_mode():
     print("1. Humano vs Humano")
     print("2. Humano vs IA")
     print("3. IA vs IA")
+    print("4. IA (Greedy) vs IA (Minimax)")
+    print("5. IA (Random) vs IA (Minimax)")
+    print("6. IA (Worst) vs IA (Minimax)")
     print("=" * 50)
     
     while True:
         try:
-            modo = int(input("Selecciona el modo de juego (1-3): "))
-            if modo in [1, 2, 3]:
+            modo = int(input("Selecciona el modo de juego (1-6): "))
+            if modo in [1, 2, 3, 4, 5, 6]:
                 return modo
             else:
-                print("Error: Debe seleccionar un modo entre 1 y 3")
+                print("Error: Debe seleccionar un modo entre 1 y 6")
         except ValueError:
             print("Error: Debe ingresar un numero valido")
 
@@ -78,6 +87,92 @@ def get_ai_difficulty():
         except ValueError:
             print("Error: Debe ingresar un numero valido")
 
+def save_benchmark(stats: dict):
+    """Guarda el benchmark directamente en __pycache__/ por modo de juego"""
+    
+    # Obtener el directorio base donde esta main.py
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    cache_dir = os.path.join(script_dir, '__pycache__')
+    
+    # Mapear modo de juego a nombre de archivo
+    modo_map = {
+        1: 'humano_vs_humano',
+        2: 'humano_vs_ia',
+        3: 'ia_vs_ia',
+        4: 'greedy_vs_minimax',
+        5: 'random_vs_minimax',
+        6: 'worst_vs_minimax'
+    }
+    
+    modo_nombre = modo_map.get(stats['mode'], f'modo_{stats["mode"]}')
+    csv_file = os.path.join(cache_dir, f'benchmark_{modo_nombre}.csv')
+    
+    # Crear directorio si no existe
+    if not os.path.exists(cache_dir):
+        os.makedirs(cache_dir)
+    
+    # Si el archivo no existe, crear con headers
+    if not os.path.exists(csv_file):
+        headers = [
+            'timestamp', 'modo_juego', 'jugador1_tipo', 'jugador2_tipo',
+            'time_limit', 'duracion_total', 'ganador',
+            'score_p1', 'score_p2',
+            'p1_nodos_expandidos', 'p1_profundidad_total', 'p1_movimientos',
+            'p2_nodos_expandidos', 'p2_profundidad_total', 'p2_movimientos',
+            'p1_profundidad_promedio', 'p2_profundidad_promedio'
+        ]
+        
+        with open(csv_file, 'w', newline='', encoding='utf-8') as f:
+            writer = csv.writer(f)
+            writer.writerow(headers)
+    
+    # Calcular datos adicionales
+    timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    tipos_jugadores = {
+        1: ('Humano', 'Humano'),
+        2: ('Humano', 'IA (Minimax)'),
+        3: ('IA (Minimax)', 'IA (Minimax)'),
+        4: ('IA (Greedy)', 'IA (Minimax)'),
+        5: ('IA (Random)', 'IA (Minimax)'),
+        6: ('IA (Worst)', 'IA (Minimax)')
+    }
+    
+    j1_tipo, j2_tipo = tipos_jugadores.get(stats['mode'], ('Desconocido', 'Desconocido'))
+    p1_avg = stats['p1_depth_total'] / stats['p1_moves'] if stats['p1_moves'] > 0 else 0
+    p2_avg = stats['p2_depth_total'] / stats['p2_moves'] if stats['p2_moves'] > 0 else 0
+    
+    # Escribir datos en CSV
+    row = [
+        timestamp,
+        stats.get('mode', 0),
+        j1_tipo,
+        j2_tipo,
+        stats.get('time_limit', 0),
+        stats.get('total_duration', 0),
+        stats.get('winner_string', 'Empate'),
+        stats.get('score_p1', 0),
+        stats.get('score_p2', 0),
+        stats.get('p1_nodes', 0),
+        stats.get('p1_depth_total', 0),
+        stats.get('p1_moves', 0),
+        stats.get('p2_nodes', 0),
+        stats.get('p2_depth_total', 0),
+        stats.get('p2_moves', 0),
+        p1_avg,
+        p2_avg
+    ]
+    
+    # Append al archivo
+    with open(csv_file, 'a', newline='', encoding='utf-8') as f:
+        writer = csv.writer(f)
+        writer.writerow(row)
+    
+    print(f"\n{'='*60}")
+    print(f"✓ Benchmark guardado en:")
+    print(f"  {csv_file}")
+    print(f"✓ Tiempo total de partida: {stats.get('total_duration', 0):.2f} segundos")
+    print(f"{'='*60}")
+
 def play_game():
     # Seleccionar modo de juego
     modo = get_game_mode()
@@ -96,8 +191,9 @@ def play_game():
             'w4': -0.5,  # Hambre del oponente
             'w5': 1.5    # Control del hueco clave
         })
-        print(f"\nJugador 1: Humano")
-        print(f"Jugador 2: IA (Dificultad: {time_limit}s)")
+        print(f"\n✓ Modo seleccionado: Humano vs IA")
+        print(f"  Jugador 1: Humano")
+        print(f"  Jugador 2: IA (Minimax) - Tiempo: {time_limit}s")
         
     elif modo == 3:  # IA vs IA
         time_limit = get_ai_difficulty()
@@ -107,28 +203,140 @@ def play_game():
         ai_player2 = AgentMinimax({
             'w1': 10.0, 'w2': 50.0, 'w3': 0.8, 'w4': -0.5, 'w5': 1.5
         })
-        print(f"\nJugador 1: IA")
-        print(f"Jugador 2: IA")
+        print(f"\n✓ Modo seleccionado: IA vs IA")
+        print(f"  Jugador 1: IA (Minimax)")
+        print(f"  Jugador 2: IA (Minimax)")
+        print(f"  Tiempo por movimiento: {time_limit}s")
+
+    elif modo == 4:
+        time_limit = get_ai_difficulty()
+        ai_player1 = AgentGreedy()
+        ai_player2 = AgentMinimax({
+            'w1': 10.0,  # Diferencial de puntuacion
+            'w2': 50.0,  # Turnos extra
+            'w3': 0.8,   # Movilidad
+            'w4': -0.5,  # Hambre del oponente
+            'w5': 1.5    # Control del hueco clave
+        })
+        print(f"\n✓ Modo seleccionado: Greedy vs Minimax")
+        print(f"  Jugador 1: IA (Greedy)")
+        print(f"  Jugador 2: IA (Minimax)")
+        print(f"  Tiempo para Minimax: {time_limit}s")
+    
+    elif modo == 5:
+        time_limit = get_ai_difficulty()
+        ai_player1 = AgentRandom()
+        ai_player2 = AgentMinimax({
+            'w1': 10.0,  # Diferencial de puntuacion
+            'w2': 50.0,  # Turnos extra
+            'w3': 0.8,   # Movilidad
+            'w4': -0.5,  # Hambre del oponente
+            'w5': 1.5    # Control del hueco clave
+        })
+        print(f"\n✓ Modo seleccionado: Random vs Minimax")
+        print(f"  Jugador 1: IA (Random)")
+        print(f"  Jugador 2: IA (Minimax)")
+        print(f"  Tiempo para Minimax: {time_limit}s")
+    
+    elif modo == 6:
+        time_limit = get_ai_difficulty()
+        ai_player1 = AgentWorst()
+        ai_player2 = AgentMinimax({
+            'w1': 10.0,  # Diferencial de puntuacion
+            'w2': 50.0,  # Turnos extra
+            'w3': 0.8,   # Movilidad
+            'w4': -0.5,  # Hambre del oponente
+            'w5': 1.5    # Control del hueco clave
+        })
+        print(f"\n✓ Modo seleccionado: Worst vs Minimax")
+        print(f"  Jugador 1: IA (Worst)")
+        print(f"  Jugador 2: IA (Minimax)")
+        print(f"  Tiempo para Minimax: {time_limit}s")
+    
+    # Guardar configuracion para mostrar tipos de jugadores
+    if ai_player1 is None:
+        jugador1_tipo = "Humano"
+    elif isinstance(ai_player1, AgentMinimax):
+        jugador1_tipo = "IA (Minimax)"
+    elif isinstance(ai_player1, AgentGreedy):
+        jugador1_tipo = "IA (Greedy)"
+    elif isinstance(ai_player1, AgentRandom):
+        jugador1_tipo = "IA (Random)"
+    elif isinstance(ai_player1, AgentWorst):
+        jugador1_tipo = "IA (Worst)"
+    else:
+        jugador1_tipo = "IA (Desconocido)"
+    
+    if ai_player2 is None:
+        jugador2_tipo = "Humano"
+    elif isinstance(ai_player2, AgentMinimax):
+        jugador2_tipo = "IA (Minimax)"
+    elif isinstance(ai_player2, AgentGreedy):
+        jugador2_tipo = "IA (Greedy)"
+    elif isinstance(ai_player2, AgentRandom):
+        jugador2_tipo = "IA (Random)"
+    elif isinstance(ai_player2, AgentWorst):
+        jugador2_tipo = "IA (Worst)"
+    else:
+        jugador2_tipo = "IA (Desconocido)"
+    
+    # Mostrar configuracion final
+    print("\n" + "="*50)
+    print("CONFIGURACION DE PARTIDA")
+    print("="*50)
+    print(f"Jugador 1: {jugador1_tipo}")
+    print(f"Jugador 2: {jugador2_tipo}")
+    if ai_player1 is not None or ai_player2 is not None:
         print(f"Tiempo por movimiento: {time_limit}s")
+    print("="*50)
     
     # Inicializar juego
     mi_tablero = MancalaBoard(piedras_iniciales=7)
     current_player = 1
+
+    game_start_time = time.time()
+    game_stats = {
+        'p1_nodes': 0, 'p1_depth_total': 0, 'p1_moves': 0,
+        'p2_nodes': 0, 'p2_depth_total': 0, 'p2_moves': 0,
+        'mode': modo, 'time_limit': time_limit
+    }
     
     while True:
-        print("\n" * 50)
+        # Limpiar pantalla
+        os.system('cls' if os.name == 'nt' else 'clear')
+        
+        # Mostrar quien esta jugando
+        if current_player == 1:
+            jugador_actual = jugador1_tipo
+        else:
+            jugador_actual = jugador2_tipo
+        
+        print(f"\n{'='*60}")
+        print(f"Turno del Jugador {current_player} ({jugador_actual})")
+        print(f"{'='*60}\n")
+        
+        # Imprimir tablero
         mi_tablero.imprimir_tablero_ascii()
         
         game_status = rules.check_game_over(mi_tablero.board)
         if game_status != 0:
             break
         
-        print(f"Turno del Jugador {current_player}")
-        
         # Determinar si el jugador actual es IA
         if current_player == 1 and ai_player1 is not None:
-            print("IA pensando...")
-            chosen_pit = ai_player1.elegir_movimiento(mi_tablero.board, current_player, time_limit)
+            # Determinar tipo de agente
+            if isinstance(ai_player1, AgentMinimax):
+                print("IA (Minimax) pensando...")
+            elif isinstance(ai_player1, AgentGreedy):
+                print("IA (Greedy) pensando...")
+            elif isinstance(ai_player1, AgentRandom):
+                print("IA (Random) pensando...")
+            elif isinstance(ai_player1, AgentWorst):
+                print("IA (Worst) pensando...")
+            else:
+                print("IA pensando...")
+            
+            chosen_pit, move_stats = ai_player1.elegir_movimiento(mi_tablero.board, current_player, time_limit)
             if chosen_pit is None:
                 print("Error: IA no pudo encontrar un movimiento valido")
                 # Buscar cualquier movimiento válido como fallback
@@ -142,8 +350,19 @@ def play_game():
             print(f"IA eligio el hueco: {chosen_pit}")
             
         elif current_player == 2 and ai_player2 is not None:
-            print("IA pensando...")
-            chosen_pit = ai_player2.elegir_movimiento(mi_tablero.board, current_player, time_limit)
+            # Determinar tipo de agente
+            if isinstance(ai_player2, AgentMinimax):
+                print("IA (Minimax) pensando...")
+            elif isinstance(ai_player2, AgentGreedy):
+                print("IA (Greedy) pensando...")
+            elif isinstance(ai_player2, AgentRandom):
+                print("IA (Random) pensando...")
+            elif isinstance(ai_player2, AgentWorst):
+                print("IA (Worst) pensando...")
+            else:
+                print("IA pensando...")
+            
+            chosen_pit, move_stats = ai_player2.elegir_movimiento(mi_tablero.board, current_player, time_limit)
             if chosen_pit is None:
                 print("Error: IA no pudo encontrar un movimiento valido")
                 # Buscar cualquier movimiento válido como fallback
@@ -158,15 +377,30 @@ def play_game():
             
         else:
             # Jugador humano
+            print(f"Humano {current_player} pensando...")
             chosen_pit = get_player_input(current_player, mi_tablero.board)
+            move_stats = {}  # No hay estadísticas para humanos
         
         new_board, move_result = logic.hacer_movimiento(mi_tablero.board, chosen_pit, current_player)
         mi_tablero.board = new_board
+        
+        # Actualizar estadisticas ANTES de cambiar de jugador
+        if current_player == 1:
+            game_stats['p1_nodes'] += move_stats.get('nodes_expanded', 0)
+            game_stats['p1_depth_total'] += move_stats.get('depth_reached', 0)
+            if move_stats: # Solo cuenta si fue un movimiento de IA
+                game_stats['p1_moves'] += 1
+        else: # current_player == 2
+            game_stats['p2_nodes'] += move_stats.get('nodes_expanded', 0)
+            game_stats['p2_depth_total'] += move_stats.get('depth_reached', 0)
+            if move_stats: # Solo cuenta si fue un movimiento de IA
+                game_stats['p2_moves'] += 1
         
         if move_result == "TURNO_EXTRA":
             print("Turno extra! Continua el mismo jugador")
             continue
         
+        # Cambiar de jugador SOLO si no hay turno extra
         current_player = 2 if current_player == 1 else 1
     
     print("Juego Terminado!")
@@ -178,6 +412,14 @@ def play_game():
     
     print(rules.declare_winner(score_p1, score_p2))
     print(f"Puntaje final - Jugador 1: {score_p1}, Jugador 2: {score_p2}")
+
+    game_stats['total_duration'] = time.time() - game_start_time
+    game_stats['winner_string'] = rules.declare_winner(score_p1, score_p2)
+    game_stats['score_p1'] = score_p1
+    game_stats['score_p2'] = score_p2
+
+    # Guardar benchmark
+    save_benchmark(game_stats)
 
 if __name__ == "__main__":
     play_game()
