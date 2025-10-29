@@ -34,7 +34,7 @@ class MancalaBoard:
         print(linea_p1)
 
         if mostrar_indices:
-            print(Fore.CYAN + "   J1     (0)    (1)    (2)    (3)    (4)    (5)    (6)" + Style.RESET_ALL)
+            print(Fore.CYAN + "          (0)    (1)    (2)    (3)    (4)    (5)    (6)     J1" + Style.RESET_ALL)
 
         print("\n" + "=" * 50)
         print(f"{Fore.GREEN}Puntajes:{Style.RESET_ALL}  J1 (Almacén 7): {almacen_p1}  |  J2 (Almacén 15): {almacen_p2}")
