@@ -2,9 +2,6 @@
 
 Un juego de Mancala implementado en Python con interfaz de consola y colores, siguiendo las reglas de la variante Congkak.
 
-<img width="350" height="300" alt="image" src="https://github.com/user-attachments/assets/a884e968-f227-48f5-adae-80917f798aa1" />
-
-
 ## Descripcion del Juego
 
 Congkak es una variante de Mancala donde dos jugadores compiten por recolectar la mayor cantidad de piedras en sus almacenes (llamados "rumah" o casa). Cada jugador tiene 7 huecos con piedras y debe distribuir las piedras de un hueco seleccionado en sentido anti-horario, saltando el almacen del oponente.
@@ -126,6 +123,8 @@ Archivo principal que integra todos los modulos y ejecuta el juego con soporte p
    - **Humano vs Humano**: Juego tradicional entre dos personas
    - **Humano vs IA**: Juegas contra una IA inteligente
    - **IA vs IA**: Observa una partida entre dos IAs
+   - **IA (Greedy) vs IA (Minimax)**: Compara estrategias
+   - **IA (Random) vs IA (Minimax)**: Baseline vs estrategia avanzada
 3. Si eliges un modo con IA, selecciona la dificultad:
    - **Facil**: IA piensa 2 segundos por movimiento
    - **Medio**: IA piensa 5 segundos por movimiento
@@ -207,6 +206,17 @@ Este proyecto fue desarrollado siguiendo una arquitectura modular donde cada arc
 - **rules.py**: Guardian de las reglas - maneja condiciones de fin de juego
 - **main.py**: Director del juego - integra todos los modulos
 
+### Modulos de IA (Directorio MINIMAX/)
+
+#### agent_ai.py - Agente Minimax
+Implementa Minimax con poda Alpha-Beta e IDS.
+
+#### agent_greedy.py - Agente Greedy
+Estrategia avara que elige el movimiento que maximiza el puntaje inmediato.
+
+#### agent_random.py - Agente Aleatorio
+Elige movimientos aleatorios (baseline para comparacion).
+
 Esta separacion permite trabajo en paralelo y facilita el mantenimiento del codigo.
 
 ## Implementacion de Inteligencia Artificial
@@ -268,8 +278,15 @@ Envoltorio que implementa Iterative Deepening Search (IDS).
 ### Modos de Juego con IA
 
 1. **Humano vs IA**: Juega contra una IA configurable
-2. **IA vs IA**: Observa partidas entre dos IAs identicas
-3. **Analisis**: Usa IA vs IA para estudiar estrategias
+2. **IA vs IA**: Observa partidas entre dos IAs identicas (Minimax vs Minimax)
+3. **Greedy vs Minimax**: Compara estrategia avara vs búsqueda avanzada
+4. **Random vs Minimax**: Compara aleatoriedad vs estrategia (baseline)
+
+### Estrategias de IA Disponibles
+
+- **Minimax**: Algoritmo de busqueda avanzada con heuristica ponderada
+- **Greedy**: Estrategia que maximiza el puntaje inmediato
+- **Random**: Seleccion aleatoria para comparacion y benchmarks
 
 La IA utiliza todas las heuristicas implementadas y es un oponente desafiante que puede adaptarse a diferentes niveles de dificultad.
 
